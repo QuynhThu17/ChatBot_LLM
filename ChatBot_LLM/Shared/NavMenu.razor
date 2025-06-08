@@ -1,0 +1,140 @@
+﻿<div class="nav-menu-container">
+    <div class="new-chat-section">
+        <button class="btn btn-primary new-chat-button">
+            <span class="oi oi-plus" aria-hidden="true"></span> New chat
+        </button>
+    </div>
+
+    <div class="search-chat-section">
+        <input type="text" class="form-control search-input" placeholder="Search chats" />
+    </div>
+
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-chat" aria-hidden="true"></span> Chat
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/manage-faq">
+                <span class="oi oi-list-rich" aria-hidden="true"></span> Quản lý FAQ
+            </NavLink>
+		</div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="agents">
+                <span class="oi oi-people" aria-hidden="true"></span> Agents
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="prompts">
+                <span class="oi oi-lightbulb" aria-hidden="true"></span> Prompts
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="plugins">
+                <span class="oi oi-puzzle-piece" aria-hidden="true"></span> Plugins
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="models">
+                <span class="oi oi-graph" aria-hidden="true"></span> Models
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="settings">
+                <span class="oi oi-cog" aria-hidden="true"></span> Settings
+            </NavLink>
+        </div>
+    </nav>
+
+    <div class="user-profile-section mt-auto">
+        <img src="https://via.placeholder.com/30" alt="User Avatar" class="user-avatar" />
+        <span class="user-name">Your Name</span>
+    </div>
+</div>
+
+<style>
+    .nav-menu-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 1rem;
+    }
+
+    .new-chat-section {
+        margin-bottom: 1rem;
+    }
+
+    .new-chat-button {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        background-color: #6A38B7; /* Màu tím đậm hơn cho nút New Chat */
+        border: none;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .new-chat-button .oi {
+            margin-right: 0.5rem;
+        }
+
+    .search-chat-section {
+        margin-bottom: 1rem;
+    }
+
+    .search-input {
+        background-color: #552D8A; /* Màu nền input search */
+        border: 1px solid #7D4ECC;
+        color: white;
+        border-radius: 0.25rem;
+    }
+
+        .search-input::placeholder {
+            color: #BBB;
+        }
+
+    .nav-link {
+        color: rgba(255, 255, 255, 0.75); /* Màu chữ mặc định */
+        padding: 0.75rem 0.5rem;
+        display: flex;
+        align-items: center;
+        border-radius: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: #552D8A; /* Màu nền khi hover hoặc active */
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-link .oi {
+            margin-right: 1rem;
+            width: 1.5rem; /* Cố định chiều rộng icon để căn chỉnh */
+        }
+
+    .user-profile-section {
+        display: flex;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin-top: 1rem;
+    }
+
+    .user-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        border: 1px solid white;
+    }
+
+    .user-name {
+        font-weight: bold;
+        color: white;
+    }
+</style>

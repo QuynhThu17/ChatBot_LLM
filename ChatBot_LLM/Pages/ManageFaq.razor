@@ -1,0 +1,76 @@
+﻿@page "/manage-faq"
+@inject FAQService FaqService
+@using ChatBot_LLM.Domain.Models
+@using ChatBot_LLM.Infrastructure.Services
+
+
+<h3>Quản lý Câu hỏi Thường gặp (FAQ)</h3>
+
+<div>
+    <h5>Thêm mới câu hỏi</h5>
+    <input class="form-control mb-2" placeholder="Câu hỏi" @bind="NewQuestion" />
+    <textarea class="form-control mb-2" placeholder="Câu trả lời" @bind="NewAnswer"></textarea>
+    <button class="btn btn-primary mb-3" @onclick="AddFaqAsync">Thêm</button>
+</div>
+
+<h5>Danh sách câu hỏi:</h5>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Câu hỏi</th>
+            <th>Trả lời</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Faqs)
+        {
+            <tr>
+                <td>
+                    <input class="form-control" @bind="item.Question" />
+                </td>
+                <td>
+                    <textarea class="form-control" @bind="item.Answer"></textarea>
+                </td>
+                <td>
+                    <button class="btn btn-success btn-sm me-2" @onclick="() => SaveFaqAsync(item)">💾</button>
+                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteFaqAsync(item)">🗑️</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<FaqEntry> Faqs = new();
+    private string NewQuestion = "";
+    private string NewAnswer = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Faqs = await FaqService.GetAllAsync();
+    }
+
+    private async Task AddFaqAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(NewQuestion) && !string.IsNullOrWhiteSpace(NewAnswer))
+        {
+            var newEntry = new FaqEntry { Question = NewQuestion, Answer = NewAnswer };
+            await FaqService.AddAsync(newEntry);
+            NewQuestion = NewAnswer = "";
+            Faqs = await FaqService.GetAllAsync();
+        }
+    }
+
+    private async Task SaveFaqAsync(FaqEntry entry)
+    {
+        await FaqService.UpdateAsync(entry);
+        Faqs = await FaqService.GetAllAsync();
+    }
+
+    private async Task DeleteFaqAsync(FaqEntry entry)
+    {
+        await FaqService.DeleteAsync(entry.Id);
+        Faqs = await FaqService.GetAllAsync();
+    }
+}
