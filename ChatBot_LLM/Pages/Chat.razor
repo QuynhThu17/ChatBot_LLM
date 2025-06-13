@@ -350,12 +350,6 @@
         Messages.Add(userMessage);
         await ChatUIHandler.AddMessage(UserMessage, "user");
 
-        // Cập nhật URL với sessionId
-        if (!NavigationManager.Uri.Contains($"sessionId={SessionId}"))
-        {
-            NavigationManager.NavigateTo($"/chat?sessionId={SessionId}", forceLoad: true);
-        }
-
         UserMessage = "";
         StateHasChanged();
 
@@ -366,6 +360,12 @@
         try
         {
             var response = await ChatbotService.GetAnswerAsync(userMessage.Content, context);
+
+            // Kiểm tra nếu response là lỗi (ví dụ: chứa thông báo lỗi từ Gemini API)
+            if (response != null && (response.Contains("Lỗi từ Gemini API") || response.Contains("overloaded") || response.Contains("Please try again later")))
+            {
+                response = "Rất tiếc, hệ thống đang bận. Vui lòng thử lại sau nhé!";
+            }
 
             var botMessage = new ChatHistory
                 {
@@ -378,13 +378,14 @@
             Messages.Add(botMessage);
             await ChatUIHandler.AddMessage(response, "assistant");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
+            // Xử lý ngoại lệ, trả về thông báo mặc định
             var errorMessage = new ChatHistory
                 {
                     SessionId = SessionId,
                     Role = "assistant",
-                    Content = $"❗ Lỗi khi gửi: {ex.Message}",
+                    Content = "Rất tiếc, hệ thống đang bận. Vui lòng thử lại sau nhé!",
                     Timestamp = DateTime.Now
                 };
             Messages.Add(errorMessage);
@@ -398,6 +399,7 @@
             await JSRuntime.InvokeVoidAsync("focusElement", inputRef);
         }
     }
+
 
     private async Task SelectAgent(string agentName)
     {
