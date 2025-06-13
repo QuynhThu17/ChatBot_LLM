@@ -1,37 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
-using Microsoft.AspNetCore.Http;
+﻿using ChatBot_LLM.Domain.Models;
+using ChatBot_LLM.Infrastructure.Services;
 
 public class ChatUIHandler
 {
-    private ChatManager _chatManager;
+    private readonly ChatManager _chatManager;
     private Guid _currentSessionId;
-    private IHttpContextAccessor _httpContextAccessor;
+    private readonly ChatHistoryService _chatHistoryService;
 
-    public ChatUIHandler(ChatManager chatManager, IHttpContextAccessor httpContextAccessor)
+    public ChatUIHandler(ChatManager chatManager, ChatHistoryService chatHistoryService)
     {
         _chatManager = chatManager;
-        _httpContextAccessor = httpContextAccessor;
-        _currentSessionId = Guid.NewGuid();
-        _chatManager.StartNewChat();
+        _chatHistoryService = chatHistoryService;
+        _currentSessionId = Guid.NewGuid(); // Tạo SessionId mới khi khởi tạo
     }
 
-    public void StartNewChat()
+    public async Task StartNewChat()
     {
-        _chatManager.ClearCurrentChat(_currentSessionId);
+        // Không lưu lịch sử ngay, chỉ tạo SessionId mới
         _currentSessionId = Guid.NewGuid();
-        _chatManager.StartNewChat();
+        _chatManager.ClearCurrentChat(_currentSessionId);
+        _chatManager.StartNewChat(); // Chỉ khởi tạo trong ChatManager (nếu cần)
     }
 
-    public void AddMessage(string message)
+    public async Task AddMessage(string message, string role = "user")
     {
         _chatManager.AddMessage(_currentSessionId, message);
+        await _chatHistoryService.AddAsync(new ChatHistory
+        {
+            SessionId = _currentSessionId.ToString(),
+            Role = role,
+            Content = message,
+            Timestamp = DateTime.Now
+        });
     }
 
-    public List<string> GetCurrentChat()
+    public string GetCurrentSessionId()
     {
-        return _chatManager.GetCurrentChat(_currentSessionId);
+        return _currentSessionId.ToString();
     }
 }

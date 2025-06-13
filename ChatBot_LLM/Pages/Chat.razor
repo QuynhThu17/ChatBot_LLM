@@ -32,7 +32,7 @@
                     <div class="agent-icon">
                         @if (!string.IsNullOrEmpty(agent.IconUrl))
                         {
-                            <img src="@agent.IconUrl" alt="@agent.Name Icon" />
+                            <img src="@agent.IconUrl" alt="@agent.Name Icon" onerror="this.src='/images/fallback-agent.png'" />
                         }
                         else
                         {
@@ -58,7 +58,16 @@
                         </div>
                     }
                 }
-                else
+                @if (IsLoading)
+                {
+                    <div class="chat-message ai-message loading-message">
+                        <div class="message-content">
+                            <span class="oi oi-loop-circular spin-animation"></span>
+                            Đang xử lý...
+                        </div>
+                    </div>
+                }
+                else if (!Messages.Any())
                 {
                     <div class="no-messages-placeholder">
                         Hãy bắt đầu cuộc trò chuyện với @(SelectedAgent ?? "một AI agent")...
@@ -219,6 +228,10 @@
         color: #333;
     }
 
+    .loading-message {
+        opacity: 0.7;
+    }
+
     .message-content {
         word-break: break-word;
     }
@@ -291,6 +304,7 @@
         .send-button-wrapper:hover {
             background-color: #e2e6ec;
         }
+
 </style>
 
 @code {
@@ -306,20 +320,8 @@
     {
         var uri = new Uri(NavigationManager.Uri);
         var sessionId = System.Web.HttpUtility.ParseQueryString(uri.Query).Get("sessionId");
-        SessionId = sessionId ?? GetOrCreateSessionId();
+        SessionId = sessionId ?? Guid.NewGuid().ToString();
         Messages = await ChatHistoryService.GetBySessionIdAsync(SessionId);
-
-        if (!Messages.Any())
-        {
-            Messages.Add(new ChatHistory
-                {
-                    Role = "assistant",
-                    Content = "Chào bạn! Tôi là trợ lý AI. Hãy hỏi tôi bất cứ điều gì.",
-                    SessionId = SessionId,
-                    Timestamp = DateTime.Now
-                });
-            await ChatHistoryService.AddAsync(Messages.Last());
-        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -346,7 +348,14 @@
             };
 
         Messages.Add(userMessage);
-        await ChatHistoryService.AddAsync(userMessage);
+        await ChatUIHandler.AddMessage(UserMessage, "user");
+
+        // Cập nhật URL với sessionId
+        if (!NavigationManager.Uri.Contains($"sessionId={SessionId}"))
+        {
+            NavigationManager.NavigateTo($"/chat?sessionId={SessionId}", forceLoad: true);
+        }
+
         UserMessage = "";
         StateHasChanged();
 
@@ -367,18 +376,19 @@
                 };
 
             Messages.Add(botMessage);
-            await ChatHistoryService.AddAsync(botMessage);
+            await ChatUIHandler.AddMessage(response, "assistant");
         }
         catch (Exception ex)
         {
-            Messages.Add(new ChatHistory
+            var errorMessage = new ChatHistory
                 {
                     SessionId = SessionId,
                     Role = "assistant",
                     Content = $"❗ Lỗi khi gửi: {ex.Message}",
                     Timestamp = DateTime.Now
-                });
-            await ChatHistoryService.AddAsync(Messages.Last());
+                };
+            Messages.Add(errorMessage);
+            await ChatUIHandler.AddMessage(errorMessage.Content, "assistant");
         }
         finally
         {
@@ -389,7 +399,7 @@
         }
     }
 
-    private void SelectAgent(string agentName)
+    private async Task SelectAgent(string agentName)
     {
         SelectedAgent = agentName;
 
@@ -402,8 +412,7 @@
             };
 
         Messages.Add(systemMessage);
-        _ = ChatHistoryService.AddAsync(systemMessage);
-
+        await ChatUIHandler.AddMessage(systemMessage.Content, "assistant");
         StateHasChanged();
     }
 
@@ -415,29 +424,15 @@
         }
     }
 
-    private string GetOrCreateSessionId()
-    {
-        var context = HttpContextAccessor.HttpContext;
-        var cookie = context?.Request.Cookies["SessionId"];
-
-        if (string.IsNullOrEmpty(cookie))
-        {
-            cookie = Guid.NewGuid().ToString();
-            context?.Response.Cookies.Append("SessionId", cookie);
-        }
-
-        return cookie!;
-    }
-
     private record AgentCard(string Name, string Description, string? IconUrl = null, string? Badge = null);
 
     private List<AgentCard> AgentList = new()
     {
-        new("Sales Representative", "An AI-powered sales representative assistant...", "https://via.placeholder.com/40"),
-        new("Market Research", "Helps uncover trends, customer sentiments...", "https://via.placeholder.com/40"),
-        new("Nutritionist", "Helps with dietary needs and healthy eating...", "https://via.placeholder.com/40"),
-        new("SEO Blog Content", "Seasoned blogger for SEO content", null, "SEO"),
-        new("Life Hacker", "Helps optimize daily routines and habits", "https://via.placeholder.com/40"),
-        new("Git Commands Assistant", "Guides Git commands and best practices", null, "H")
+        new("Sales Representative", "Trợ lý đại diện bán hàng AI...", "https://placehold.co/40x40", "Sales"),
+        new("Market Research", "Giúp khám phá xu hướng, cảm nhận khách hàng...", "https://placehold.co/40x40", "Market"),
+        new("Nutritionist", "Hỗ trợ nhu cầu ăn uống và ăn uống lành mạnh...", "https://placehold.co/40x40", "Nutrition"),
+        new("SEO Blog Content", "Blogger dày dạn cho nội dung SEO", null, "SEO"),
+        new("Life Hacker", "Giúp tối ưu hóa thói quen và lịch trình hàng ngày", "https://placehold.co/40x40", "Life"),
+        new("Git Commands Assistant", "Hướng dẫn lệnh Git và thực tiễn tốt", null, "Git")
     };
 }

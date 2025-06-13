@@ -19,14 +19,11 @@
             <span class="oi oi-list-rich" aria-hidden="true"></span> Quản lý FAQ
         </NavLink>
     </div>
-  
     <div class="nav-item px-3">
         <NavLink class="nav-link" href="prompts">
             <span class="oi oi-lightbulb" aria-hidden="true"></span> Prompts
         </NavLink>
     </div>
-   
-  
     <div class="nav-item px-3">
         <NavLink class="nav-link" href="settings">
             <span class="oi oi-cog" aria-hidden="true"></span> Settings
@@ -45,7 +42,7 @@
     </nav>
 
     <div class="user-profile-section mt-auto">
-        <img src="https://via.placeholder.com/30" alt="User Avatar" class="user-avatar" />
+        <img src="https://placehold.co/30x30" alt="User Avatar" class="user-avatar" onerror="this.src='/images/fallback-avatar.png'" />
         <span class="user-name">Your Name</span>
     </div>
 </div>
@@ -63,9 +60,6 @@
     [Inject]
     private IJSRuntime JSRuntime { get; set; }
 
-    [Inject]
-    private IHttpContextAccessor HttpContextAccessor { get; set; }
-
     private List<ChatSessionSummary> Sessions = new();
     private List<ChatSessionSummary> FilteredSessions = new();
     private string SearchTerm = "";
@@ -79,38 +73,17 @@
     {
         Sessions = await ChatHistoryService.GetChatSessionsAsync();
         FilteredSessions = Sessions;
-    }
-
-    private void FilterChats()
-    {
-        FilteredSessions = string.IsNullOrWhiteSpace(SearchTerm)
-            ? Sessions
-            : Sessions.Where(s => s.Title.ToLower().Contains(SearchTerm.ToLower())).ToList();
+        StateHasChanged();
     }
 
     private async Task NewChat()
     {
-        var oldSessionId = GetOrCreateSessionId();
-        if (!string.IsNullOrEmpty(oldSessionId))
-        {
-            await ChatHistoryService.DeleteBySessionIdAsync(oldSessionId);
-        }
-
-        ChatUIHandler.StartNewChat();
-        var newSessionId = GetOrCreateSessionId();
-        var welcomeMessage = new ChatHistory
-            {
-                Role = "assistant",
-                Content = "Chào bạn! Tôi là trợ lý AI. Hãy hỏi tôi bất cứ điều gì.",
-                SessionId = newSessionId
-            };
-        await ChatHistoryService.AddAsync(welcomeMessage);
-
-        NavigationManager.NavigateTo("/", forceLoad: true);
+        // Tạo SessionId mới nhưng không gọi StartNewChat
+        var newSessionId = Guid.NewGuid().ToString();
+        NavigationManager.NavigateTo($"/chat?sessionId={newSessionId}", forceLoad: true);
         await Task.Delay(100);
         await JSRuntime.InvokeVoidAsync("scrollToElementById", "messagesEndRef");
         await JSRuntime.InvokeVoidAsync("focusElementById", "inputRef");
-        await LoadChatHistory();
     }
 
     private async Task RestoreChat(string sessionId)
@@ -121,18 +94,12 @@
         await JSRuntime.InvokeVoidAsync("focusElementById", "inputRef");
     }
 
-    private string GetOrCreateSessionId()
+    private void FilterChats()
     {
-        var context = HttpContextAccessor.HttpContext;
-        var cookie = context?.Request.Cookies["SessionId"];
-
-        if (string.IsNullOrEmpty(cookie))
-        {
-            cookie = Guid.NewGuid().ToString();
-            context?.Response.Cookies.Append("SessionId", cookie);
-        }
-
-        return cookie!;
+        FilteredSessions = string.IsNullOrWhiteSpace(SearchTerm)
+            ? Sessions
+            : Sessions.Where(s => s.Title.ToLower().Contains(SearchTerm.ToLower())).ToList();
+        StateHasChanged();
     }
 }
 
