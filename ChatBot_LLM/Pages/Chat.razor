@@ -93,207 +93,205 @@
 </div>
 
 <style>
-	.home-page-container {
-		padding: 2rem;
-		background-color: #f0f2f5;
-		border-radius: 8px;
-		box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-	}
+    .home-page-container {
+        padding: 2rem;
+        background-color: #f0f2f5;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
 
-	.header-section {
-		text-align: center;
-		margin-bottom: 2rem;
-	}
+    .header-section {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
 
-		.header-section h1 {
-			font-size: 2.5rem;
-			color: #333;
-			margin-bottom: 0.5rem;
-		}
+        .header-section h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
 
-		.header-section .lead {
-			font-size: 1.1rem;
-			color: #666;
-		}
+        .header-section .lead {
+            font-size: 1.1rem;
+            color: #666;
+        }
 
-	.agents-section {
-		background-color: white;
-		padding: 1.5rem;
-		border-radius: 8px;
-		box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-		margin-bottom: 2rem;
-	}
+    .agents-section {
+        background-color: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
 
-	.agents-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1.5rem;
-	}
+    .agents-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
 
-	.agent-cards-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 1.5rem;
-	}
+    .agent-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
 
-	.agent-card {
-		display: flex;
-		align-items: flex-start;
-		padding: 1rem;
-		border: 1px solid #e0e0e0;
-		border-radius: 8px;
-		background-color: #fff;
-		box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-		transition: transform 0.2s ease;
-		cursor: pointer;
-	}
+    .agent-card {
+        display: flex;
+        align-items: flex-start;
+        padding: 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease;
+        cursor: pointer;
+    }
 
-		.agent-card:hover {
-			transform: translateY(-3px);
-			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-		}
+        .agent-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
 
-	.agent-icon {
-		flex-shrink: 0;
-		margin-right: 1rem;
-		width: 40px;
-		height: 40px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 50%;
-		background-color: #f0f0f0;
-		overflow: hidden;
-	}
+    .agent-icon {
+        flex-shrink: 0;
+        margin-right: 1rem;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        overflow: hidden;
+    }
 
-		.agent-icon img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-		}
+        .agent-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-		.agent-icon .badge {
-			font-size: 1.2rem;
-			padding: 0.5rem;
-			line-height: 1;
-			width: 100%;
-			height: 100%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			border-radius: 50%;
-		}
+        .agent-icon .badge {
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            line-height: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
 
-	.chat-container {
-		margin-top: 2rem;
-		max-height: 400px;
-		overflow-y: auto;
-		padding: 1rem;
-		border: 1px solid #e0e0e0;
-		border-radius: 8px;
-		background-color: #fff;
-	}
+    .chat-container {
+        margin-top: 2rem;
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #fff;
+    }
 
-	.chat-messages-container {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
+    .chat-messages-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
 
-	.chat-message {
-		max-width: 80%;
-		padding: 0.75rem;
-		border-radius: 8px;
-	}
+    .chat-message {
+        max-width: 80%;
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
 
-	.user-message {
-		align-self: flex-end;
-		background-color: #007bff;
-		color: white;
-	}
+    .user-message {
+        align-self: flex-end;
+        background-color: #007bff;
+        color: white;
+    }
 
-	.ai-message {
-		align-self: flex-start;
-		background-color: #f0f0f0;
-		color: #333;
-	}
+    .ai-message {
+        align-self: flex-start;
+        background-color: #f0f0f0;
+        color: #333;
+    }
 
-	.message-content {
-		word-break: break-word;
-	}
+    .message-content {
+        word-break: break-word;
+    }
 
-	.no-messages-placeholder {
-		text-align: center;
-		color: #666;
-		padding: 2rem;
-		font-style: italic;
-	}
+    .no-messages-placeholder {
+        text-align: center;
+        color: #666;
+        padding: 2rem;
+        font-style: italic;
+    }
 
-	.bottom-input-section {
-		background-color: white;
-		padding: 1rem 1.5rem;
-		border-radius: 8px;
-		box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-		display: flex;
-		align-items: center;
-		margin-top: 2rem;
-	}
+    .bottom-input-section {
+        background-color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        display: flex;
+        align-items: center;
+        margin-top: 2rem;
+    }
 
-	.message-textarea {
-		flex-grow: 1;
-		border: 1px solid #ced4da;
-		border-radius: 0.5rem;
-		padding: 0.75rem 1rem;
-		font-size: 1rem;
-		margin-right: 1rem;
-	}
+    .message-textarea {
+        flex-grow: 1;
+        border: 1px solid #ced4da;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        margin-right: 1rem;
+    }
 
-	.input-icons {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 0.75rem;
-	}
+    .input-icons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+    }
 
-	.left-icons {
-		display: flex;
-		gap: 0.75rem;
-	}
+    .left-icons {
+        display: flex;
+        gap: 0.75rem;
+    }
 
-		.left-icons .oi {
-			font-size: 1.2rem;
-			color: #6c757d;
-			cursor: pointer;
-			transition: color 0.2s;
-		}
+        .left-icons .oi {
+            font-size: 1.2rem;
+            color: #6c757d;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
 
-			.left-icons .oi:hover {
-				color: #333;
-			}
+            .left-icons .oi:hover {
+                color: #333;
+            }
 
-	.send-button-wrapper {
-		background-color: #f1f4f9;
-		color: black;
-		border-radius: 50%;
-		width: 52px;
-		height: 52px;
-		margin-right: 0;
-		margin-left: 0.25rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-		transition: background-color 0.2s ease;
-	}
+    .send-button-wrapper {
+        background-color: #f1f4f9;
+        color: black;
+        border-radius: 50%;
+        width: 52px;
+        height: 52px;
+        margin-right: 0;
+        margin-left: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: background-color 0.2s ease;
+    }
 
-		.send-button-wrapper:hover {
-			background-color: #e2e6ec;
-		}
+        .send-button-wrapper:hover {
+            background-color: #e2e6ec;
+        }
 </style>
-
-
 @code {
     private List<ChatHistory> Messages = new();
     private string UserMessage = "";
@@ -302,7 +300,6 @@
     private ElementReference messagesEndRef;
     private ElementReference inputRef;
     private string SessionId = "";
-    private bool IsFirstUserMessage = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -311,20 +308,10 @@
         SessionId = sessionId ?? ChatUIHandler.GetCurrentSessionId();
         Messages = await ChatHistoryService.GetBySessionIdAsync(SessionId);
 
+        // Không thêm tin nhắn chào mừng ở đây, vì đã được xử lý trong ChatUIHandler
         if (!Messages.Any())
         {
-            Messages.Add(new ChatHistory
-                {
-                    Role = "assistant",
-                    Content = "Chào bạn! Tôi là trợ lý AI. Hãy hỏi tôi bất cứ điều gì.",
-                    SessionId = SessionId,
-                    Timestamp = DateTime.Now
-                });
-            await ChatHistoryService.AddAsync(Messages.Last());
-        }
-        else
-        {
-            IsFirstUserMessage = !Messages.Any(m => m.Role == "user");
+            // Đảm bảo không tạo phiên mới, chỉ sử dụng SessionId hiện tại
         }
     }
 
@@ -344,22 +331,15 @@
         IsLoading = true;
 
         var userMessage = new ChatHistory
-            {
-                SessionId = SessionId,
-                Role = "user",
-                Content = UserMessage,
-                Timestamp = DateTime.Now
-            };
+        {
+            SessionId = SessionId,
+            Role = "user",
+            Content = UserMessage,
+            Timestamp = DateTime.Now
+        };
 
         Messages.Add(userMessage);
         await ChatUIHandler.AddMessage(UserMessage, "user");
-
-        if (IsFirstUserMessage)
-        {
-            var title = UserMessage.Length > 50 ? UserMessage.Substring(0, 50) + "..." : UserMessage;
-            await ChatHistoryService.UpdateSessionTitleAsync(SessionId, title);
-            IsFirstUserMessage = false;
-        }
 
         UserMessage = "";
         StateHasChanged();
@@ -373,12 +353,12 @@
             var response = await ChatbotService.GetAnswerAsync(userMessage.Content, context);
 
             var botMessage = new ChatHistory
-                {
-                    SessionId = SessionId,
-                    Role = "assistant",
-                    Content = response,
-                    Timestamp = DateTime.Now
-                };
+            {
+                SessionId = SessionId,
+                Role = "assistant",
+                Content = response,
+                Timestamp = DateTime.Now
+            };
 
             Messages.Add(botMessage);
             await ChatUIHandler.AddMessage(response, "assistant");
@@ -386,12 +366,12 @@
         catch (Exception ex)
         {
             var errorMessage = new ChatHistory
-                {
-                    SessionId = SessionId,
-                    Role = "assistant",
-                    Content = $"❗ Lỗi khi gửi: {ex.Message}",
-                    Timestamp = DateTime.Now
-                };
+            {
+                SessionId = SessionId,
+                Role = "assistant",
+                Content = $"❗ Lỗi khi gửi: {ex.Message}",
+                Timestamp = DateTime.Now
+            };
             Messages.Add(errorMessage);
             await ChatUIHandler.AddMessage(errorMessage.Content, "assistant");
         }
@@ -409,12 +389,12 @@
         SelectedAgent = agentName;
 
         var systemMessage = new ChatHistory
-            {
-                Role = "assistant",
-                Content = $"Đã chọn {agentName}. Tôi có thể giúp gì cho bạn hôm nay?",
-                SessionId = SessionId,
-                Timestamp = DateTime.Now
-            };
+        {
+            Role = "assistant",
+            Content = $"Đã chọn {agentName}. Tôi có thể giúp gì cho bạn hôm nay?",
+            SessionId = SessionId,
+            Timestamp = DateTime.Now
+        };
 
         Messages.Add(systemMessage);
         await ChatUIHandler.AddMessage(systemMessage.Content, "assistant");

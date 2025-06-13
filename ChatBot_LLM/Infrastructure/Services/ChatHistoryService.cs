@@ -66,7 +66,12 @@ namespace ChatBot_LLM.Infrastructure.Services
                                .OrderBy(ch => ch.Timestamp)
                                .Select(ch => ch.Content)
                                .FirstOrDefault())
-                        : "Cuộc trò chuyện chưa có tiêu đề",
+                        : g.Where(ch => ch.Role == "assistant")
+                           .OrderBy(ch => ch.Timestamp)
+                           .Select(ch => ch.Content)
+                           .FirstOrDefault() != null
+                           ? "Cuộc trò chuyện mới"
+                           : "Cuộc trò chuyện chưa có tiêu đề",
                     LastMessageTime = g.Max(ch => ch.Timestamp)
                 })
                 .OrderByDescending(s => s.LastMessageTime)
@@ -83,6 +88,7 @@ namespace ChatBot_LLM.Infrastructure.Services
 
             if (sessionMessages.Any())
             {
+                // Cập nhật tiêu đề nếu cần (có thể lưu tiêu đề vào một bảng riêng nếu cần)
                 await context.SaveChangesAsync();
             }
         }

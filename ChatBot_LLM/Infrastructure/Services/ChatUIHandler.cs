@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using ChatBot_LLM.Domain.Models;
 using ChatBot_LLM.Infrastructure.Services;
-using ChatBot_LLM.Domain.Models;
-using Microsoft.AspNetCore.Http;
 
 public class ChatUIHandler
 {
@@ -16,27 +12,30 @@ public class ChatUIHandler
         _chatManager = chatManager;
         _chatHistoryService = chatHistoryService;
         _currentSessionId = Guid.NewGuid();
-        _chatManager.StartNewChat();
+        // Không gọi StartNewChat ở đây để tránh tạo phiên chat dư thừa
     }
 
     public async Task StartNewChat()
     {
-        // Lưu lịch sử phiên hiện tại
+        // Lưu lịch sử phiên hiện tại (nếu có)
         var currentMessages = _chatManager.GetCurrentChat(_currentSessionId);
-        foreach (var message in currentMessages)
+        if (currentMessages.Any())
         {
-            await _chatHistoryService.AddAsync(new ChatHistory
+            foreach (var message in currentMessages)
             {
-                SessionId = _currentSessionId.ToString(),
-                Role = currentMessages.IndexOf(message) % 2 == 0 ? "user" : "assistant",
-                Content = message,
-                Timestamp = DateTime.Now
-            });
+                await _chatHistoryService.AddAsync(new ChatHistory
+                {
+                    SessionId = _currentSessionId.ToString(),
+                    Role = currentMessages.IndexOf(message) % 2 == 0 ? "user" : "assistant",
+                    Content = message,
+                    Timestamp = DateTime.Now
+                });
+            }
         }
 
-        // Xóa và tạo phiên mới
-        _chatManager.ClearCurrentChat(_currentSessionId);
+        // Tạo phiên mới
         _currentSessionId = Guid.NewGuid();
+        _chatManager.ClearCurrentChat(_currentSessionId);
         _chatManager.StartNewChat();
 
         // Thêm tin nhắn chào mừng
@@ -48,6 +47,7 @@ public class ChatUIHandler
             Timestamp = DateTime.Now
         };
         await _chatHistoryService.AddAsync(welcomeMessage);
+        _chatManager.AddMessage(_currentSessionId, welcomeMessage.Content);
     }
 
     public async Task AddMessage(string message, string role = "user")
