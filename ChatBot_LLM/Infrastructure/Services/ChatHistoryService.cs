@@ -21,6 +21,7 @@ namespace ChatBot_LLM.Infrastructure.Services
             using var context = _contextFactory.CreateDbContext();
             return await context.ChatHistories
                 .Where(ch => ch.SessionId == sessionId)
+                .OrderBy(ch => ch.Timestamp)
                 .ToListAsync();
         }
 
@@ -49,14 +50,41 @@ namespace ChatBot_LLM.Infrastructure.Services
                 .Select(g => new ChatSessionSummary
                 {
                     SessionId = g.Key,
-                    Title = g.OrderBy(ch => ch.Timestamp).First().Content.Length > 50
-                        ? g.OrderBy(ch => ch.Timestamp).First().Content.Substring(0, 50) + "..."
-                        : g.OrderBy(ch => ch.Timestamp).First().Content,
+                    Title = g.Where(ch => ch.Role == "user")
+                             .OrderBy(ch => ch.Timestamp)
+                             .Select(ch => ch.Content)
+                             .FirstOrDefault() != null
+                        ? (g.Where(ch => ch.Role == "user")
+                            .OrderBy(ch => ch.Timestamp)
+                            .Select(ch => ch.Content)
+                            .FirstOrDefault().Length > 50
+                            ? g.Where(ch => ch.Role == "user")
+                               .OrderBy(ch => ch.Timestamp)
+                               .Select(ch => ch.Content)
+                               .FirstOrDefault().Substring(0, 50) + "..."
+                            : g.Where(ch => ch.Role == "user")
+                               .OrderBy(ch => ch.Timestamp)
+                               .Select(ch => ch.Content)
+                               .FirstOrDefault())
+                        : "Cuộc trò chuyện chưa có tiêu đề",
                     LastMessageTime = g.Max(ch => ch.Timestamp)
                 })
                 .OrderByDescending(s => s.LastMessageTime)
                 .ToListAsync();
             return sessions;
+        }
+
+        public async Task UpdateSessionTitleAsync(string sessionId, string title)
+        {
+            using var context = _contextFactory.CreateDbContext();
+            var sessionMessages = await context.ChatHistories
+                .Where(ch => ch.SessionId == sessionId)
+                .ToListAsync();
+
+            if (sessionMessages.Any())
+            {
+                await context.SaveChangesAsync();
+            }
         }
     }
 
