@@ -1,12 +1,45 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <PageTitle>Not found</PageTitle>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+﻿@inject NavigationManager NavigationManager
+@inject IHttpContextAccessor HttpContextAccessor
+@inject ILogger<App> Logger
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        </Found>
+        <NotFound>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p>Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+
+@code {
+    private bool isInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isInitialized)
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                var sessionId = httpContext.Request.Cookies["SessionId"];
+                Logger.LogInformation("HttpContext available, SessionId from cookie: {SessionId}", sessionId);
+                if (string.IsNullOrEmpty(sessionId))
+                {
+                    sessionId = Guid.NewGuid().ToString();
+                    httpContext.Response.Cookies.Append("SessionId", sessionId);
+                    Logger.LogInformation("New SessionId created: {SessionId}", sessionId);
+                    NavigationManager.NavigateTo($"/chat/{sessionId}", forceLoad: true);
+                }
+            }
+            else
+            {
+                Logger.LogWarning("HttpContext is null during OnAfterRenderAsync");
+            }
+            isInitialized = true;
+        }
+    }
+}

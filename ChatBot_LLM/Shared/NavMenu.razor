@@ -1,48 +1,31 @@
-﻿<div class="nav-menu-container">
+﻿@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavigationManager
+@inject ChatHistoryService ChatHistoryService
+@inject IJSRuntime JSRuntime
+
+<div class="nav-menu-container">
     <div class="new-chat-section">
-        <button class="btn btn-primary new-chat-button">
+        <button class="btn btn-primary new-chat-button" @onclick="CreateNewChat">
             <span class="oi oi-plus" aria-hidden="true"></span> New chat
         </button>
     </div>
 
     <div class="search-chat-section">
-        <input type="text" class="form-control search-input" placeholder="Search chats" />
+        <input type="text" class="form-control search-input" placeholder="Search chats" @bind="SearchTerm" @oninput="FilterChats" />
     </div>
 
     <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-chat" aria-hidden="true"></span> Chat
-            </NavLink>
-        </div>
+        @foreach (var chat in FilteredChats)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="@($"chat/{chat.SessionId}")" @onclick="() => SelectChat(chat.SessionId)">
+                    <span class="oi oi-chat" aria-hidden="true"></span> @chat.Title
+                </NavLink>
+            </div>
+        }
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/manage-faq">
                 <span class="oi oi-list-rich" aria-hidden="true"></span> Quản lý FAQ
-            </NavLink>
-		</div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="agents">
-                <span class="oi oi-people" aria-hidden="true"></span> Agents
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="prompts">
-                <span class="oi oi-lightbulb" aria-hidden="true"></span> Prompts
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="plugins">
-                <span class="oi oi-puzzle-piece" aria-hidden="true"></span> Plugins
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="models">
-                <span class="oi oi-graph" aria-hidden="true"></span> Models
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="settings">
-                <span class="oi oi-cog" aria-hidden="true"></span> Settings
             </NavLink>
         </div>
     </nav>
@@ -59,6 +42,8 @@
         flex-direction: column;
         height: 100%;
         padding: 1rem;
+        background-color: #2C1F4A;
+        color: white;
     }
 
     .new-chat-section {
@@ -69,7 +54,7 @@
         width: 100%;
         padding: 0.75rem 1rem;
         border-radius: 0.5rem;
-        background-color: #6A38B7; /* Màu tím đậm hơn cho nút New Chat */
+        background-color: #6A38B7;
         border: none;
         color: white;
         font-weight: bold;
@@ -87,7 +72,7 @@
     }
 
     .search-input {
-        background-color: #552D8A; /* Màu nền input search */
+        background-color: #552D8A;
         border: 1px solid #7D4ECC;
         color: white;
         border-radius: 0.25rem;
@@ -98,7 +83,7 @@
         }
 
     .nav-link {
-        color: rgba(255, 255, 255, 0.75); /* Màu chữ mặc định */
+        color: rgba(255, 255, 255, 0.75);
         padding: 0.75rem 0.5rem;
         display: flex;
         align-items: center;
@@ -107,14 +92,14 @@
     }
 
         .nav-link:hover, .nav-link.active {
-            background-color: #552D8A; /* Màu nền khi hover hoặc active */
+            background-color: #552D8A;
             color: white;
             text-decoration: none;
         }
 
         .nav-link .oi {
             margin-right: 1rem;
-            width: 1.5rem; /* Cố định chiều rộng icon để căn chỉnh */
+            width: 1.5rem;
         }
 
     .user-profile-section {
@@ -138,3 +123,73 @@
         color: white;
     }
 </style>
+
+@code {
+    private List<ChatHistory> AllChats = new();
+    private List<ChatHistory> FilteredChats = new();
+    private string SearchTerm = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var sessions = await ChatHistoryService.GetBySessionIdAsync(null);
+            var groupedChats = sessions.GroupBy(c => c.SessionId)
+                .Select(g => new
+                {
+                    SessionId = g.Key,
+                    Title = g.FirstOrDefault(c => !string.IsNullOrEmpty(c.Title))?.Title ??
+                            (g.First().Content.Length > 20 ? g.First().Content.Substring(0, 20) + "..." : g.First().Content)
+                })
+                .ToList();
+
+            AllChats = groupedChats.Select(g => new ChatHistory { SessionId = g.SessionId, Title = g.Title }).ToList();
+            FilteredChats = AllChats.ToList();
+        }
+        catch (Exception ex)
+        {
+            // Xử lý lỗi nếu ChatHistoryService thất bại
+            Console.WriteLine($"Error loading chat history: {ex.Message}");
+        }
+    }
+
+    private async Task CreateNewChat()
+    {
+        var currentSessionId = GetCurrentSessionId();
+        if (!string.IsNullOrEmpty(currentSessionId))
+        {
+            var currentChats = await ChatHistoryService.GetBySessionIdAsync(currentSessionId);
+            if (currentChats.Any())
+            {
+                var title = currentChats.FirstOrDefault(c => !string.IsNullOrEmpty(c.Title))?.Title ??
+                            (currentChats.First().Content.Length > 20 ? currentChats.First().Content.Substring(0, 20) + "..." : currentChats.First().Content);
+                var newChat = new ChatHistory { SessionId = currentSessionId, Title = title };
+                if (!AllChats.Any(c => c.SessionId == currentSessionId))
+                {
+                    AllChats.Add(newChat);
+                }
+            }
+        }
+
+        var newSessionId = Guid.NewGuid().ToString();
+        NavigationManager.NavigateTo($"/chat/{newSessionId}", forceLoad: true); // Thêm forceLoad: true
+        await JSRuntime.InvokeVoidAsync("scrollToElement", null);
+    }
+
+    private string GetCurrentSessionId()
+    {
+        return HttpContextAccessor.HttpContext?.Request.Cookies["SessionId"] ?? "";
+    }
+
+    private void SelectChat(string sessionId)
+    {
+        NavigationManager.NavigateTo($"/chat/{sessionId}", forceLoad: true); // Thêm forceLoad: true
+    }
+
+    private void FilterChats()
+    {
+        FilteredChats = string.IsNullOrWhiteSpace(SearchTerm)
+            ? AllChats.ToList()
+            : AllChats.Where(c => c.Title.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+}

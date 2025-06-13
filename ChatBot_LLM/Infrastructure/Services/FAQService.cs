@@ -13,7 +13,7 @@ namespace ChatBot_LLM.Infrastructure.Services
             _context = context;
         }
 
-        public async Task<List<FaqEntry>> GetAllAsync() =>
+        public async Task<List<FAQEntry>> GetAllAsync() =>
             await _context.FAQs.ToListAsync();
 
         public async Task<string?> FindContextAsync(string userQuestion)
@@ -31,13 +31,13 @@ namespace ChatBot_LLM.Infrastructure.Services
             return tokensA.Intersect(tokensB).Count();
         }
 
-        public async Task AddAsync(FaqEntry faq)
+        public async Task AddAsync(FAQEntry faq)
         {
             _context.FAQs.Add(faq);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(FaqEntry faq)
+        public async Task UpdateAsync(FAQEntry faq)
         {
             _context.FAQs.Update(faq);
             await _context.SaveChangesAsync();
@@ -54,3 +54,6 @@ namespace ChatBot_LLM.Infrastructure.Services
         }
     }
 }
+    
+    
+

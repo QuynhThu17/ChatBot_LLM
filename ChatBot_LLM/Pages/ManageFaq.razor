@@ -42,7 +42,7 @@
 </table>
 
 @code {
-    private List<FaqEntry> Faqs = new();
+    private List<FAQEntry> Faqs = new();
     private string NewQuestion = "";
     private string NewAnswer = "";
 
@@ -55,22 +55,23 @@
     {
         if (!string.IsNullOrWhiteSpace(NewQuestion) && !string.IsNullOrWhiteSpace(NewAnswer))
         {
-            var newEntry = new FaqEntry { Question = NewQuestion, Answer = NewAnswer };
+            var newEntry = new FAQEntry { Question = NewQuestion, Answer = NewAnswer };
             await FaqService.AddAsync(newEntry);
             NewQuestion = NewAnswer = "";
             Faqs = await FaqService.GetAllAsync();
         }
     }
 
-    private async Task SaveFaqAsync(FaqEntry entry)
+    private async Task SaveFaqAsync(FAQEntry entry)
     {
         await FaqService.UpdateAsync(entry);
         Faqs = await FaqService.GetAllAsync();
     }
 
-    private async Task DeleteFaqAsync(FaqEntry entry)
+    private async Task DeleteFaqAsync(FAQEntry entry)
     {
         await FaqService.DeleteAsync(entry.Id);
         Faqs = await FaqService.GetAllAsync();
     }
 }
+

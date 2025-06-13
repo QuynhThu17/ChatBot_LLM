@@ -1,0 +1,228 @@
+﻿@page "/chat/{SessionId}"
+@using ChatBot_LLM.Domain.Models
+@inject IChatbotService ChatbotService
+@inject ChatHistoryService ChatHistoryService
+@inject IJSRuntime JSRuntime
+@inject IHttpContextAccessor HttpContextAccessor
+
+<PageTitle>Internal AI Platform</PageTitle>
+
+<div class="home-page-container">
+    <div class="header-section">
+        <h1>Internal AI Platform</h1>
+        <p class="lead">Empower your daily workflow with AI</p>
+    </div>
+
+    <div class="agents-section">
+        <div class="agents-header">
+            <h2>Your AI agents</h2>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2">Edit</button>
+                <button class="btn btn-sm btn-outline-secondary">View all (21)</button>
+            </div>
+        </div>
+
+        <div class="agent-cards-grid">
+            @foreach (var agent in AgentList)
+            {
+                <div class="agent-card" @onclick='() => SelectAgent(agent.Name)'>
+                    <div class="agent-icon">
+                        @if (!string.IsNullOrEmpty(agent.IconUrl))
+                        {
+                            <img src="@agent.IconUrl" alt="@agent.Name Icon" />
+                        }
+                        else
+                        {
+                            <span class="badge bg-dark text-white">@agent.Badge</span>
+                        }
+                    </div>
+                    <div class="agent-info">
+                        <h3>@agent.Name</h3>
+                        <p>@agent.Description</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-messages-container">
+                @if (Messages.Any())
+                {
+                    @foreach (var message in Messages)
+                    {
+                        <div class="chat-message @(message.Role == "user" ? "user-message" : "ai-message")">
+                            <div class="message-content">@((MarkupString)message.Content)</div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-messages-placeholder">
+                        Hãy bắt đầu cuộc trò chuyện với @(SelectedAgent ?? "một AI agent")...
+                    </div>
+                }
+                <div @ref="messagesEndRef"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-input-section">
+        <textarea @bind="UserMessage"
+                  @ref="inputRef"
+                  @onkeydown="HandleKeyDown"
+                  class="form-control message-textarea"
+                  placeholder="Nhập nội dung... Nhấn Enter để gửi"
+                  rows="2">
+        </textarea>
+
+        <div class="input-icons">
+            <div class="send-button-wrapper" @onclick="SendMessage" title="Gửi">
+                <span class="oi oi-location"></span>
+            </div>
+            <div class="left-icons">
+                <span class="oi oi-microphone" title="Ghi âm"></span>
+                <span class="oi oi-image" title="Gửi ảnh"></span>
+                <span class="oi oi-paperclip" title="Đính kèm"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Giữ nguyên CSS từ Chat.razor */
+</style>
+
+@code {
+    [Parameter] public string SessionId { get; set; } = "";
+    private List<ChatHistory> Messages = new();
+    private string UserMessage = "";
+    private bool IsLoading = false;
+    private string? SelectedAgent = null;
+    private ElementReference messagesEndRef;
+    private ElementReference inputRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(SessionId))
+        {
+            SessionId = Guid.NewGuid().ToString();
+            var context = (IHttpContextAccessor)HttpContextAccessor.HttpContext?.RequestServices.GetService(typeof(IHttpContextAccessor));
+            context?.HttpContext?.Response.Cookies.Append("SessionId", SessionId);
+        }
+        Messages = await ChatHistoryService.GetBySessionIdAsync(SessionId);
+
+        if (!Messages.Any())
+        {
+            Messages.Add(new ChatHistory
+                {
+                    Role = "assistant",
+                    Content = "Chào bạn! Tôi là trợ lý AI. Hãy hỏi tôi bất cứ điều gì.",
+                    SessionId = SessionId
+                });
+            await ChatHistoryService.AddAsync(Messages.Last());
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("scrollToElement", messagesEndRef);
+            await JSRuntime.InvokeVoidAsync("focusElement", inputRef);
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(UserMessage) || IsLoading) return;
+
+        IsLoading = true;
+
+        var userMessage = new ChatHistory
+            {
+                SessionId = SessionId,
+                Role = "user",
+                Content = UserMessage,
+                Timestamp = DateTime.Now
+            };
+
+        Messages.Add(userMessage);
+        await ChatHistoryService.AddAsync(userMessage);
+        UserMessage = "";
+        StateHasChanged();
+
+        var context = SelectedAgent != null
+            ? $"Bạn là {SelectedAgent}. Hãy trả lời với vai trò này."
+            : "Bạn là trợ lý AI chung.";
+
+        try
+        {
+            var response = await ChatbotService.GetAnswerAsync(userMessage.Content, context);
+
+            var botMessage = new ChatHistory
+                {
+                    SessionId = SessionId,
+                    Role = "assistant",
+                    Content = response,
+                    Timestamp = DateTime.Now
+                };
+
+            Messages.Add(botMessage);
+            await ChatHistoryService.AddAsync(botMessage);
+        }
+        catch (Exception ex)
+        {
+            Messages.Add(new ChatHistory
+                {
+                    SessionId = SessionId,
+                    Role = "assistant",
+                    Content = $"❗ Lỗi khi gửi: {ex.Message}",
+                    Timestamp = DateTime.Now
+                });
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+            await JSRuntime.InvokeVoidAsync("scrollToElement", messagesEndRef);
+            await JSRuntime.InvokeVoidAsync("focusElement", inputRef);
+        }
+    }
+
+    private void SelectAgent(string agentName)
+    {
+        SelectedAgent = agentName;
+
+        var systemMessage = new ChatHistory
+            {
+                Role = "assistant",
+                Content = $"Đã chọn {agentName}. Tôi có thể giúp gì cho bạn hôm nay?",
+                SessionId = SessionId,
+                Timestamp = DateTime.Now
+            };
+
+        Messages.Add(systemMessage);
+        _ = ChatHistoryService.AddAsync(systemMessage);
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private record AgentCard(string Name, string Description, string? IconUrl = null, string? Badge = null);
+
+    private List<AgentCard> AgentList = new()
+    {
+        new("Sales Representative", "An AI-powered sales representative assistant...", "https://via.placeholder.com/40"),
+        new("Market Research", "Helps uncover trends, customer sentiments...", "https://via.placeholder.com/40"),
+        new("Nutritionist", "Helps with dietary needs and healthy eating...", "https://via.placeholder.com/40"),
+        new("SEO Blog Content", "Seasoned blogger for SEO content", null, "SEO"),
+        new("Life Hacker", "Helps optimize daily routines and habits", "https://via.placeholder.com/40"),
+        new("Git Commands Assistant", "Guides Git commands and best practices", null, "H")
+    };
+}
