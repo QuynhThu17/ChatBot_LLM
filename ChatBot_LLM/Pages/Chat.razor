@@ -58,7 +58,16 @@
                         </div>
                     }
                 }
-                else
+                @if (IsLoading)
+                {
+                    <div class="chat-message ai-message loading-message">
+                        <div class="message-content">
+                            <span class="oi oi-loop-circular spin-animation"></span>
+                            Đang xử lý...
+                        </div>
+                    </div>
+                }
+                else if (!Messages.Any())
                 {
                     <div class="no-messages-placeholder">
                         Hãy bắt đầu cuộc trò chuyện với @(SelectedAgent ?? "một AI agent")...
@@ -219,6 +228,10 @@
         color: #333;
     }
 
+    .loading-message {
+        opacity: 0.7;
+    }
+
     .message-content {
         word-break: break-word;
     }
@@ -291,7 +304,9 @@
         .send-button-wrapper:hover {
             background-color: #e2e6ec;
         }
+
 </style>
+
 @code {
     private List<ChatHistory> Messages = new();
     private string UserMessage = "";
@@ -305,14 +320,8 @@
     {
         var uri = new Uri(NavigationManager.Uri);
         var sessionId = System.Web.HttpUtility.ParseQueryString(uri.Query).Get("sessionId");
-        SessionId = sessionId ?? ChatUIHandler.GetCurrentSessionId();
+        SessionId = sessionId ?? Guid.NewGuid().ToString();
         Messages = await ChatHistoryService.GetBySessionIdAsync(SessionId);
-
-        // Không thêm tin nhắn chào mừng ở đây, vì đã được xử lý trong ChatUIHandler
-        if (!Messages.Any())
-        {
-            // Đảm bảo không tạo phiên mới, chỉ sử dụng SessionId hiện tại
-        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -331,15 +340,21 @@
         IsLoading = true;
 
         var userMessage = new ChatHistory
-        {
-            SessionId = SessionId,
-            Role = "user",
-            Content = UserMessage,
-            Timestamp = DateTime.Now
-        };
+            {
+                SessionId = SessionId,
+                Role = "user",
+                Content = UserMessage,
+                Timestamp = DateTime.Now
+            };
 
         Messages.Add(userMessage);
         await ChatUIHandler.AddMessage(UserMessage, "user");
+
+        // Cập nhật URL với sessionId
+        if (!NavigationManager.Uri.Contains($"sessionId={SessionId}"))
+        {
+            NavigationManager.NavigateTo($"/chat?sessionId={SessionId}", forceLoad: true);
+        }
 
         UserMessage = "";
         StateHasChanged();
@@ -353,12 +368,12 @@
             var response = await ChatbotService.GetAnswerAsync(userMessage.Content, context);
 
             var botMessage = new ChatHistory
-            {
-                SessionId = SessionId,
-                Role = "assistant",
-                Content = response,
-                Timestamp = DateTime.Now
-            };
+                {
+                    SessionId = SessionId,
+                    Role = "assistant",
+                    Content = response,
+                    Timestamp = DateTime.Now
+                };
 
             Messages.Add(botMessage);
             await ChatUIHandler.AddMessage(response, "assistant");
@@ -366,12 +381,12 @@
         catch (Exception ex)
         {
             var errorMessage = new ChatHistory
-            {
-                SessionId = SessionId,
-                Role = "assistant",
-                Content = $"❗ Lỗi khi gửi: {ex.Message}",
-                Timestamp = DateTime.Now
-            };
+                {
+                    SessionId = SessionId,
+                    Role = "assistant",
+                    Content = $"❗ Lỗi khi gửi: {ex.Message}",
+                    Timestamp = DateTime.Now
+                };
             Messages.Add(errorMessage);
             await ChatUIHandler.AddMessage(errorMessage.Content, "assistant");
         }
@@ -389,12 +404,12 @@
         SelectedAgent = agentName;
 
         var systemMessage = new ChatHistory
-        {
-            Role = "assistant",
-            Content = $"Đã chọn {agentName}. Tôi có thể giúp gì cho bạn hôm nay?",
-            SessionId = SessionId,
-            Timestamp = DateTime.Now
-        };
+            {
+                Role = "assistant",
+                Content = $"Đã chọn {agentName}. Tôi có thể giúp gì cho bạn hôm nay?",
+                SessionId = SessionId,
+                Timestamp = DateTime.Now
+            };
 
         Messages.Add(systemMessage);
         await ChatUIHandler.AddMessage(systemMessage.Content, "assistant");

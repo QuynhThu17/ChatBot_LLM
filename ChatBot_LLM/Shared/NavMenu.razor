@@ -78,12 +78,12 @@
 
     private async Task NewChat()
     {
-        await ChatUIHandler.StartNewChat();
-        NavigationManager.NavigateTo("/chat", forceLoad: true);
+        // Tạo SessionId mới nhưng không gọi StartNewChat
+        var newSessionId = Guid.NewGuid().ToString();
+        NavigationManager.NavigateTo($"/chat?sessionId={newSessionId}", forceLoad: true);
         await Task.Delay(100);
         await JSRuntime.InvokeVoidAsync("scrollToElementById", "messagesEndRef");
         await JSRuntime.InvokeVoidAsync("focusElementById", "inputRef");
-        await LoadChatHistory();
     }
 
     private async Task RestoreChat(string sessionId)
