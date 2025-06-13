@@ -22,36 +22,35 @@
 </div>
 
 <style>
-    /* Bạn có thể đặt một số CSS cơ bản cho layout ở đây hoặc trong site.css */
     .page {
         display: flex;
-        height: 100vh; /* Chiều cao đầy đủ của viewport */
-        overflow: hidden; /* Ngăn chặn scroll tổng thể */
+        height: 100vh;
+        overflow: hidden;
     }
 
     .sidebar {
-        width: 250px; /* Chiều rộng của sidebar */
-        background-color: #310D6A; /* Màu nền sidebar theo mẫu */
+        width: 250px;
+        background-color: #310D6A;
         color: white;
         padding: 0;
         display: flex;
         flex-direction: column;
-        overflow-y: auto; /* Cho phép scroll nếu nội dung sidebar dài */
-        box-shadow: 2px 0 5px rgba(0,0,0,0.2); /* Tạo bóng */
+        overflow-y: auto;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.2);
     }
 
     .main {
-        flex-grow: 1; /* Chiếm phần còn lại của không gian */
+        flex-grow: 1;
         display: flex;
         flex-direction: column;
-        background-color: #f8f9fa; /* Màu nền chính */
-        overflow-y: auto; /* Cho phép scroll nội dung chính */
+        background-color: #f8f9fa;
+        overflow-y: auto;
     }
 
     .top-row {
-        background-color: #ffffff; /* Màu nền header */
+        background-color: #ffffff;
         border-bottom: 1px solid #dee2e6;
-        height: 60px; /* Chiều cao top-row */
+        height: 60px;
         display: flex;
         align-items: center;
         padding: 0 20px;
@@ -61,6 +60,4 @@
         flex-grow: 1;
         padding: 20px;
     }
-
-    /* Các kiểu CSS khác có thể đặt trong site.css */
 </style>
