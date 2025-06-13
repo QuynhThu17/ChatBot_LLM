@@ -1,50 +1,47 @@
 ﻿<div class="nav-menu-container">
     <div class="new-chat-section">
-        <button class="btn btn-primary new-chat-button">
+        <button class="btn btn-primary new-chat-button" @onclick="NewChat">
             <span class="oi oi-plus" aria-hidden="true"></span> New chat
         </button>
     </div>
 
     <div class="search-chat-section">
-        <input type="text" class="form-control search-input" placeholder="Search chats" />
+        <input type="text" class="form-control search-input" placeholder="Search chats" @bind="SearchTerm" @oninput="FilterChats" />
     </div>
 
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-chat" aria-hidden="true"></span> Chat
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/manage-faq">
-                <span class="oi oi-list-rich" aria-hidden="true"></span> Quản lý FAQ
-            </NavLink>
-		</div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="agents">
-                <span class="oi oi-people" aria-hidden="true"></span> Agents
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="prompts">
-                <span class="oi oi-lightbulb" aria-hidden="true"></span> Prompts
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="plugins">
-                <span class="oi oi-puzzle-piece" aria-hidden="true"></span> Plugins
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="models">
-                <span class="oi oi-graph" aria-hidden="true"></span> Models
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="settings">
-                <span class="oi oi-cog" aria-hidden="true"></span> Settings
-            </NavLink>
-        </div>
+    <div class="nav-item px-3">
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <span class="oi oi-chat" aria-hidden="true"></span> Chat
+        </NavLink>
+    </div>
+    <div class="nav-item px-3">
+        <NavLink class="nav-link" href="/manage-faq">
+            <span class="oi oi-list-rich" aria-hidden="true"></span> Quản lý FAQ
+        </NavLink>
+    </div>
+  
+    <div class="nav-item px-3">
+        <NavLink class="nav-link" href="prompts">
+            <span class="oi oi-lightbulb" aria-hidden="true"></span> Prompts
+        </NavLink>
+    </div>
+   
+  
+    <div class="nav-item px-3">
+        <NavLink class="nav-link" href="settings">
+            <span class="oi oi-cog" aria-hidden="true"></span> Settings
+        </NavLink>
+    </div>
+
+    <nav class="flex-column chat-history-section">
+        @foreach (var session in FilteredSessions)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="" @onclick="@(() => RestoreChat(session.SessionId))">
+                    <span class="oi oi-chat" aria-hidden="true"></span> @session.Title
+                </NavLink>
+            </div>
+        }
     </nav>
 
     <div class="user-profile-section mt-auto">
@@ -52,6 +49,92 @@
         <span class="user-name">Your Name</span>
     </div>
 </div>
+
+@code {
+    [Inject]
+    private ChatUIHandler ChatUIHandler { get; set; }
+
+    [Inject]
+    private ChatHistoryService ChatHistoryService { get; set; }
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+
+    [Inject]
+    private IHttpContextAccessor HttpContextAccessor { get; set; }
+
+    private List<ChatSessionSummary> Sessions = new();
+    private List<ChatSessionSummary> FilteredSessions = new();
+    private string SearchTerm = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadChatHistory();
+    }
+
+    private async Task LoadChatHistory()
+    {
+        Sessions = await ChatHistoryService.GetChatSessionsAsync();
+        FilteredSessions = Sessions;
+    }
+
+    private void FilterChats()
+    {
+        FilteredSessions = string.IsNullOrWhiteSpace(SearchTerm)
+            ? Sessions
+            : Sessions.Where(s => s.Title.ToLower().Contains(SearchTerm.ToLower())).ToList();
+    }
+
+    private async Task NewChat()
+    {
+        var oldSessionId = GetOrCreateSessionId();
+        if (!string.IsNullOrEmpty(oldSessionId))
+        {
+            await ChatHistoryService.DeleteBySessionIdAsync(oldSessionId);
+        }
+
+        ChatUIHandler.StartNewChat();
+        var newSessionId = GetOrCreateSessionId();
+        var welcomeMessage = new ChatHistory
+            {
+                Role = "assistant",
+                Content = "Chào bạn! Tôi là trợ lý AI. Hãy hỏi tôi bất cứ điều gì.",
+                SessionId = newSessionId
+            };
+        await ChatHistoryService.AddAsync(welcomeMessage);
+
+        NavigationManager.NavigateTo("/", forceLoad: true);
+        await Task.Delay(100);
+        await JSRuntime.InvokeVoidAsync("scrollToElementById", "messagesEndRef");
+        await JSRuntime.InvokeVoidAsync("focusElementById", "inputRef");
+        await LoadChatHistory();
+    }
+
+    private async Task RestoreChat(string sessionId)
+    {
+        NavigationManager.NavigateTo($"/chat?sessionId={sessionId}", forceLoad: true);
+        await Task.Delay(100);
+        await JSRuntime.InvokeVoidAsync("scrollToElementById", "messagesEndRef");
+        await JSRuntime.InvokeVoidAsync("focusElementById", "inputRef");
+    }
+
+    private string GetOrCreateSessionId()
+    {
+        var context = HttpContextAccessor.HttpContext;
+        var cookie = context?.Request.Cookies["SessionId"];
+
+        if (string.IsNullOrEmpty(cookie))
+        {
+            cookie = Guid.NewGuid().ToString();
+            context?.Response.Cookies.Append("SessionId", cookie);
+        }
+
+        return cookie!;
+    }
+}
 
 <style>
     .nav-menu-container {
@@ -69,7 +152,7 @@
         width: 100%;
         padding: 0.75rem 1rem;
         border-radius: 0.5rem;
-        background-color: #6A38B7; /* Màu tím đậm hơn cho nút New Chat */
+        background-color: #6A38B7;
         border: none;
         color: white;
         font-weight: bold;
@@ -87,7 +170,7 @@
     }
 
     .search-input {
-        background-color: #552D8A; /* Màu nền input search */
+        background-color: #552D8A;
         border: 1px solid #7D4ECC;
         color: white;
         border-radius: 0.25rem;
@@ -97,24 +180,32 @@
             color: #BBB;
         }
 
+    .chat-history-section {
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
     .nav-link {
-        color: rgba(255, 255, 255, 0.75); /* Màu chữ mặc định */
+        color: rgba(255, 255, 255, 0.75);
         padding: 0.75rem 0.5rem;
         display: flex;
         align-items: center;
         border-radius: 0.25rem;
         margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
         .nav-link:hover, .nav-link.active {
-            background-color: #552D8A; /* Màu nền khi hover hoặc active */
+            background-color: #552D8A;
             color: white;
             text-decoration: none;
         }
 
         .nav-link .oi {
             margin-right: 1rem;
-            width: 1.5rem; /* Cố định chiều rộng icon để căn chỉnh */
+            width: 1.5rem;
         }
 
     .user-profile-section {

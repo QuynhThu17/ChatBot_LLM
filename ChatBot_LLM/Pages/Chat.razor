@@ -1,10 +1,12 @@
 ﻿@page "/"
+@page "/chat"
 @using ChatBot_LLM.Domain.Models
 @inject IChatbotService ChatbotService
 @inject ChatHistoryService ChatHistoryService
+@inject ChatUIHandler ChatUIHandler
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IJSRuntime JSRuntime
-
+@inject NavigationManager NavigationManager
 
 <PageTitle>Internal AI Platform</PageTitle>
 
@@ -62,13 +64,14 @@
                         Hãy bắt đầu cuộc trò chuyện với @(SelectedAgent ?? "một AI agent")...
                     </div>
                 }
-                <div @ref="messagesEndRef"></div>
+                <div id="messagesEndRef" @ref="messagesEndRef"></div>
             </div>
         </div>
     </div>
 
     <div class="bottom-input-section">
         <textarea @bind="UserMessage"
+                  id="inputRef"
                   @ref="inputRef"
                   @onkeydown="HandleKeyDown"
                   class="form-control message-textarea"
@@ -86,7 +89,6 @@
                 <span class="oi oi-paperclip" title="Đính kèm"></span>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -274,10 +276,10 @@
         background-color: #f1f4f9;
         color: black;
         border-radius: 50%;
-        width: 52px; /* giữ kích thước nút */
+        width: 52px;
         height: 52px;
-        margin-right: 0; /* 🔥 thu sát bên phải */
-        margin-left: 0.25rem; /* 🔻 có thể giảm tiếp */
+        margin-right: 0;
+        margin-left: 0.25rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -286,20 +288,9 @@
         transition: background-color 0.2s ease;
     }
 
-
         .send-button-wrapper:hover {
             background-color: #e2e6ec;
         }
-
-    .send-icon {
-        font-size: 2rem; /* 📌 lớn hơn rõ rệt */
-        font-weight: bold;
-        line-height: 1;
-        margin-top: -2px;
-    }
-
-    }
-
 </style>
 
 @code {
@@ -313,7 +304,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        SessionId = GetOrCreateSessionId();
+        var uri = new Uri(NavigationManager.Uri);
+        var sessionId = System.Web.HttpUtility.ParseQueryString(uri.Query).Get("sessionId");
+        SessionId = sessionId ?? GetOrCreateSessionId();
         Messages = await ChatHistoryService.GetBySessionIdAsync(SessionId);
 
         if (!Messages.Any())
@@ -322,7 +315,8 @@
                 {
                     Role = "assistant",
                     Content = "Chào bạn! Tôi là trợ lý AI. Hãy hỏi tôi bất cứ điều gì.",
-                    SessionId = SessionId
+                    SessionId = SessionId,
+                    Timestamp = DateTime.Now
                 });
             await ChatHistoryService.AddAsync(Messages.Last());
         }
@@ -384,6 +378,7 @@
                     Content = $"❗ Lỗi khi gửi: {ex.Message}",
                     Timestamp = DateTime.Now
                 });
+            await ChatHistoryService.AddAsync(Messages.Last());
         }
         finally
         {
@@ -407,7 +402,7 @@
             };
 
         Messages.Add(systemMessage);
-        _ = ChatHistoryService.AddAsync(systemMessage); // Không await để không chậm UI
+        _ = ChatHistoryService.AddAsync(systemMessage);
 
         StateHasChanged();
     }
@@ -446,4 +441,3 @@
         new("Git Commands Assistant", "Guides Git commands and best practices", null, "H")
     };
 }
-
