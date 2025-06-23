@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using ChatBot_LLM.Interfaces;
 using ChatBot_LLM.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ChatBot_LLM.Infrastructure.Services
 {
@@ -13,23 +15,49 @@ namespace ChatBot_LLM.Infrastructure.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
-        private readonly FAQService _faqService;
+        private readonly EmbeddingRetrievalService _embeddingService;
+        private readonly ChatHistoryService _chatHistoryService;
 
-        public GeminiChatbotService(HttpClient httpClient, IConfiguration configuration, FAQService faqService)
+        public GeminiChatbotService(HttpClient httpClient, IConfiguration configuration, EmbeddingRetrievalService embeddingService, ChatHistoryService chatHistoryService)
         {
             _httpClient = httpClient;
             _apiKey = configuration["Gemini:ApiKey"]!;
-            _faqService = faqService;
+            _embeddingService = embeddingService;
+            _chatHistoryService = chatHistoryService;
         }
 
         public async Task<string> GetAnswerAsync(string question, string context = "")
         {
-            var matchedContext = await _faqService.FindContextAsync(question);
+            // Lấy top 5 câu hỏi tương tự từ RAG (Python API)
+            var retrievedFaqs = await _embeddingService.GetRelevantFaqsAsync(question);
 
-            var fullContext = !string.IsNullOrWhiteSpace(matchedContext) ? matchedContext : context;
+            string knowledgeBase = string.Join("\n\n", retrievedFaqs.Select(f =>
+                $"Câu hỏi: {f.Question}\nTrả lời: {f.Answer}"));
 
-            var prompt = $"Bạn là trợ lý ảo. Dựa vào thông tin sau: {fullContext}. Hãy trả lời câu hỏi sau một cách thân thiện: {question}";
+            // Lấy lịch sử chat gần nhất từ ChatHistory (ví dụ lấy 5 tin nhắn cuối)
+            var sessionId = context; // context bây giờ dùng tạm để truyền sessionId vào
+            var chatHistory = await _chatHistoryService.GetBySessionIdAsync(sessionId);
 
+            var recentMessages = chatHistory
+                .OrderByDescending(ch => ch.Timestamp)
+                .Take(10)
+                .OrderBy(ch => ch.Timestamp) // đảo lại đúng thứ tự thời gian
+                .Select(ch => $"{ch.Role.ToUpper()}: {ch.Content}");
+
+            string chatMemory = string.Join("\n", recentMessages);
+
+            // Tổng hợp prompt cuối cùng
+            var prompt = $@"Bạn là trợ lý ảo hỗ trợ khách hàng. 
+            Dưới đây là dữ liệu tri thức nội bộ:
+            {knowledgeBase}
+
+            Đây là lịch sử hội thoại gần đây với khách hàng:
+            {chatMemory}
+
+            Bây giờ, hãy trả lời câu hỏi mới nhất một cách chính xác, thân thiện:
+            {question}";
+
+            // Gọi Gemini như cũ
             var body = new
             {
                 contents = new[]
@@ -78,5 +106,6 @@ namespace ChatBot_LLM.Infrastructure.Services
 
             return "⚠️ Không nhận được phản hồi hợp lệ từ API Gemini.";
         }
+
     }
 }

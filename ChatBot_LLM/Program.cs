@@ -29,6 +29,9 @@ builder.Services.AddScoped<ChatUIHandler>();
 
 builder.Services.AddSingleton<WeatherForecastService>();
 
+builder.Services.AddScoped<EmbeddingRetrievalService>();
+builder.Services.AddScoped<IChatbotService, GeminiChatbotService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
