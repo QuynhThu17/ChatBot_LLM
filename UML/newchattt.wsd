@@ -1,0 +1,26 @@
+@startuml
+hide footbox
+actor "Người dùng" as Foo1
+boundary "Chatbot_LLM" as Foo2
+control "Hệ thống" as Foo3
+entity "Cơ sở dữ liệu" as Foo4
+
+Foo1 -> Foo2 : Nhấn "New Chat"
+activate Foo1
+activate Foo2
+Foo2 -> Foo3 : Yêu cầu tạo cuộc trò chuyện mới
+activate Foo3
+Foo3 -> Foo4 : Lưu thông tin cuộc trò chuyện mới
+activate Foo4
+Foo4 --> Foo3 : Xác nhận lưu thành công
+deactivate Foo4
+Foo3 -> Foo3 : Tạo ID cuộc trò chuyện
+Foo3 --> Foo2 : Trả về ID cuộc trò chuyện
+deactivate Foo3
+Foo2 -> Foo2 : Hiển thị giao diện chat mới
+activate Foo2
+Foo2 -> Foo1 : Hiển thị cuộc trò chuyện mới
+deactivate Foo2
+deactivate Foo1
+
+@enduml

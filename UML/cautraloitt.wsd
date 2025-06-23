@@ -1,0 +1,35 @@
+@startuml
+hide footbox
+actor "Người dùng" as Foo1
+boundary "Chatbot_LLM" as Foo2
+control "Hệ thống" as Foo3
+entity "Gemini API" as Foo4
+
+Foo1 -> Foo2 : Nhập câu hỏi
+activate Foo1
+activate Foo2
+
+Foo2 -> Foo3 : Xử lý câu hỏi
+activate Foo3
+Foo3 -> Foo3 : Lấy thông tin từ hệ thống
+note right
+  [Lấy thông tin từ cơ sở dữ liệu SQL Server]
+end note
+Foo3 -> Foo4 : Gửi prompt đến API Gemini
+activate Foo4
+Foo4 -> Foo4 : Trả về trả lời (Dựa trên dữ liệu đã được xây dựng ở SQL Server)
+Foo4 --> Foo3 : Trả câu trả lời
+deactivate Foo4
+Foo3 -> Foo3 : Gọi prompt tạo câu trả lời
+note right
+  [Truy xuất từ SQL Server]
+  [Tạo câu trả lời dựa trên dữ liệu đã được xây dựng]
+end note
+Foo3 -> Foo3 : Lưu câu trả lời
+Foo3 --> Foo2 : Hiện thị câu trả lời
+deactivate Foo3
+Foo2 -> Foo1 : Hiện thị câu trả lời trên chat
+deactivate Foo2
+deactivate Foo1
+
+@enduml
