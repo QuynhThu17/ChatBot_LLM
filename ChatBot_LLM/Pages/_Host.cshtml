@@ -1,10 +1,19 @@
-﻿@page "/chatbot"
+﻿@page "/"
 @namespace ChatBot_LLM.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-<script src="js/site.js"></script>
-<link rel="stylesheet" href="/css/chat.css" />
 @{
     Layout = "_Layout";
 }
 
-<component type="typeof(App)" render-mode="ServerPrerendered" />
+<CascadingAuthenticationState>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+</CascadingAuthenticationState>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+</style>

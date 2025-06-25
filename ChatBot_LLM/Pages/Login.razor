@@ -1,0 +1,129 @@
+﻿@page "/login"
+@namespace ChatBot_LLM.Pages
+@layout LoginLayout
+@inject UserService UserService
+@inject CustomAuthStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang Đăng Nhập</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Sử dụng font Inter làm font chữ mặc định */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-900">
+
+    <div class="flex items-center justify-center min-h-screen">
+
+        <div class="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-2xl">
+
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-gray-900">
+                    Chào mừng trở lại!
+                </h1>
+                <p class="mt-2 text-gray-500">
+                    Đăng nhập để tiếp tục
+                </p>
+            </div>
+
+            <form class="mt-8 space-y-6" @onsubmit="LoginUser">
+
+                <div class="space-y-4">
+                    <div class="relative">
+                        <label for="username" class="sr-only">Tên đăng nhập</label>
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <input id="username"
+                               name="username"
+                               type="text"
+                               required
+                               class="w-full pl-10 pr-3 py-3 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Tên đăng nhập"
+                               @bind="Username"
+                               @bind:event="oninput" />
+                    </div>
+
+                    <div class="relative">
+                        <label for="password" class="sr-only">Mật khẩu</label>
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <input id="password"
+                               name="password"
+                               type="password"
+                               required
+                               class="w-full pl-10 pr-3 py-3 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               placeholder="Mật khẩu"
+                               @bind="Password"
+                               @bind:event="oninput" />
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Error))
+                {
+                    <p class="text-sm text-center text-red-600">@Error</p>
+                }
+                else
+                {
+                    <div class="text-sm text-center text-red-600 h-5"></div> @* Giữ khoảng trống để tránh layout bị nhảy *@
+                }
+
+
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                        Đăng nhập
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-sm text-center">
+                <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
+                    Quên mật khẩu?
+                </a>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+@code {
+    private string Username;
+    private string Password;
+    private string Error;
+
+    private async Task LoginUser()
+    {
+        Error = null; // Xóa lỗi cũ mỗi khi cố gắng đăng nhập
+
+        var user = await UserService.ValidateUser(Username, Password);
+        if (user != null)
+        {
+            AuthProvider.NotifyUserAuthentication(user.Username, user.Role);
+
+            await Task.Delay(100); // Đảm bảo AuthState cập nhật
+
+            var newSessionId = Guid.NewGuid().ToString();
+            Navigation.NavigateTo($"/chat?sessionId={newSessionId}");
+        }
+        else
+        {
+            Error = "Tên đăng nhập hoặc mật khẩu không hợp lệ.";
+            StateHasChanged(); // Cập nhật UI để hiển thị lỗi
+        }
+    }
+}

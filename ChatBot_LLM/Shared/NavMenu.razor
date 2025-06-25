@@ -1,4 +1,8 @@
-﻿<div class="nav-menu-container">
+﻿@inject AuthenticationStateProvider AuthProvider
+@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="nav-menu-container">
     <div class="new-chat-section">
         <button class="btn btn-primary new-chat-button" @onclick="NewChat">
             <span class="oi oi-plus" aria-hidden="true"></span> New chat
@@ -14,21 +18,13 @@
             <span class="oi oi-chat" aria-hidden="true"></span> Chat
         </NavLink>
     </div>
-    <div class="nav-item px-3">
+    <AuthorizeView Roles="Admin">
+        <div class="nav-item px-3">
         <NavLink class="nav-link" href="/manage-faq">
             <span class="oi oi-list-rich" aria-hidden="true"></span> Quản lý FAQ
         </NavLink>
     </div>
-    <div class="nav-item px-3">
-        <NavLink class="nav-link" href="prompts">
-            <span class="oi oi-lightbulb" aria-hidden="true"></span> Prompts
-        </NavLink>
-    </div>
-    <div class="nav-item px-3">
-        <NavLink class="nav-link" href="settings">
-            <span class="oi oi-cog" aria-hidden="true"></span> Settings
-        </NavLink>
-    </div>
+    </AuthorizeView>
 
     <nav class="flex-column chat-history-section">
         @foreach (var session in FilteredSessions)
@@ -43,13 +39,18 @@
 
     <div class="user-profile-section mt-auto">
         <img src="https://placehold.co/30x30" alt="User Avatar" class="user-avatar" onerror="this.src='/images/fallback-avatar.png'" />
-        <span class="user-name">Your Name</span>
+        @if (authState != null && authState.User.Identity.IsAuthenticated)
+        {
+            <span class="user-name">@authState.User.Identity.Name</span>
+        }
     </div>
 </div>
 
 @code {
     [Inject]
     private ChatUIHandler ChatUIHandler { get; set; }
+
+    private AuthenticationState? authState;
 
     [Inject]
     private ChatHistoryService ChatHistoryService { get; set; }
@@ -63,6 +64,28 @@
     private List<ChatSessionSummary> Sessions = new();
     private List<ChatSessionSummary> FilteredSessions = new();
     private string SearchTerm = "";
+
+    private AuthenticationStateProvider _authProvider;
+
+    protected override void OnInitialized()
+    {
+        _authProvider = AuthProvider;
+        _authProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> task)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (_authProvider != null)
+        {
+            _authProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        }
+    }
+
 
     protected override async Task OnInitializedAsync()
     {

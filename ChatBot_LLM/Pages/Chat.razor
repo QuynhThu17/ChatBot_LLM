@@ -1,5 +1,5 @@
-﻿@page "/"
-@page "/chat"
+﻿@page "/chat"
+@attribute [Authorize]
 @using ChatBot_LLM.Domain.Models
 @inject IChatbotService ChatbotService
 @inject ChatHistoryService ChatHistoryService

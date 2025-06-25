@@ -2,6 +2,7 @@
 @inject FAQService FaqService
 @using ChatBot_LLM.Domain.Models
 @using ChatBot_LLM.Infrastructure.Services
+@attribute [Authorize(Roles = "Admin")]
 
 
 <h3>Quản lý Câu hỏi Thường gặp (FAQ)</h3>

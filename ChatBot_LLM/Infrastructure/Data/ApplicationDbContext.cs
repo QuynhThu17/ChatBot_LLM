@@ -13,6 +13,8 @@ namespace ChatBot_LLM.Infrastructure.Data
 
         public DbSet<FaqEntry> FAQs => Set<FaqEntry>();
         public DbSet<ChatHistory> ChatHistories => Set<ChatHistory>();
+        public DbSet<User> Users { get; set; }
+
 
     }
 }
